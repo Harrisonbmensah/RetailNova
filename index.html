@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sales Performance Dashboard | First Project</title>
+<meta name="description" content="Excel sales analysis 2019-2024: revenue, products and customers.">
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--text:#1b2430;--muted:#667085;--line:#e4e7ec;--c1:#2563eb;--c2:#0d9488;--c3:#f59e0b;--c4:#db2777;--c5:#7c3aed;--c6:#64748b;--c7:#16a34a}
+@media (prefers-color-scheme:dark){:root{--bg:#0f141b;--card:#171d27;--text:#e8ecf2;--muted:#9aa5b5;--line:#2a3342;--c1:#60a5fa;--c2:#2dd4bf;--c3:#fbbf24;--c4:#f472b6;--c5:#a78bfa;--c6:#94a3b8;--c7:#4ade80}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{padding:28px 20px 8px;max-width:1150px;margin:auto}
+h1{margin:0 0 4px;font-size:1.6rem}
+header p{margin:0;color:var(--muted)}
+main{max-width:1150px;margin:auto;padding:12px 20px 40px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin:16px 0}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.kpi span{display:block;color:var(--muted);font-size:.8rem;text-transform:uppercase;letter-spacing:.04em}
+.kpi b{font-size:1.45rem}
+nav{display:flex;gap:8px;margin:20px 0 14px;flex-wrap:wrap}
+nav button{border:1px solid var(--line);background:var(--card);color:var(--text);padding:8px 18px;border-radius:999px;font:inherit;cursor:pointer}
+nav button[aria-selected=true]{background:var(--c1);border-color:var(--c1);color:#fff}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(440px,1fr));gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;min-width:0}
+.card h2{font-size:1rem;margin:0 0 2px}
+.card p.sub{margin:0 0 10px;color:var(--muted);font-size:.82rem}
+.wide{grid-column:1/-1}
+.chart svg{width:100%;height:auto;display:block}
+.chart text{fill:var(--muted);font-size:12px}
+.chart .val{fill:var(--text);font-weight:600}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:8px;font-size:.82rem}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px}
+.panel[hidden]{display:none}
+footer{max-width:1150px;margin:auto;padding:0 20px 40px;color:var(--muted);font-size:.85rem}
+#tip{position:fixed;pointer-events:none;background:#111;color:#fff;padding:5px 9px;border-radius:6px;font-size:12px;opacity:0;transition:opacity .1s;z-index:9}
+</style>
+</head>
+<body>
+<header>
+<h1>Sales Performance Dashboard</h1>
+<p>Retail sales analysis, 2019&ndash;2024 &middot; built from an Excel project (cleaned data, pivot tables, dashboards)</p>
+</header>
+<main>
+<section class="kpis" id="kpis"></section>
+<nav role="tablist">
+<button role="tab" aria-selected="true" data-tab="rev">Revenue</button>
+<button role="tab" aria-selected="false" data-tab="prod">Products</button>
+<button role="tab" aria-selected="false" data-tab="cust">Customers</button>
+</nav>
+
+<section class="panel" id="rev"><div class="grid">
+<div class="card wide"><h2>Monthly revenue</h2><p class="sub">Total sales by month, all years combined</p><div class="chart" id="c-month"></div></div>
+<div class="card"><h2>Revenue by product category</h2><p class="sub">Total sales</p><div class="chart" id="c-cat"></div></div>
+<div class="card"><h2>Monthly profit trend</h2><p class="sub">Total profit by month</p><div class="chart" id="c-profit"></div></div>
+<div class="card"><h2>Revenue share by country</h2><p class="sub">% of total sales</p><div class="chart" id="c-country"></div></div>
+<div class="card"><h2>Revenue share by age group</h2><p class="sub">% of total sales</p><div class="chart" id="c-age"></div></div>
+</div></section>
+
+<section class="panel" id="prod" hidden><div class="grid">
+<div class="card"><h2>Share of revenue by category</h2><p class="sub">% of total sales</p><div class="chart" id="p-share"></div></div>
+<div class="card"><h2>Monthly units sold</h2><p class="sub">Total units by month</p><div class="chart" id="p-units"></div></div>
+<div class="card"><h2>5 best performing products</h2><p class="sub">Total sales</p><div class="chart" id="p-top"></div></div>
+<div class="card"><h2>5 under-performing products</h2><p class="sub">Total sales</p><div class="chart" id="p-bot"></div></div>
+</div></section>
+
+<section class="panel" id="cust" hidden><div class="grid">
+<div class="card wide"><h2>Top 10 customers by average order value</h2><p class="sub">Average sales per transaction</p><div class="chart" id="u-top"></div></div>
+<div class="card"><h2>Revenue by age group</h2><p class="sub">Total sales</p><div class="chart" id="u-age"></div></div>
+<div class="card"><h2>Yearly revenue</h2><p class="sub">Total sales per year</p><div class="chart" id="u-year"></div></div>
+</div></section>
+</main>
+<footer>
+<p><b>Method:</b> raw data (52,021 rows) was cleaned in Excel &mdash; country names standardised, ages converted to numbers, month numbers rebuilt from dates, duplicates and invalid rows removed &mdash; leaving 51,116 transactions. Age groups: Young Adult &le;27, Adult 28&ndash;35, Old Adult 36&ndash;43, Elders 44&ndash;51, Senior 52&ndash;60. See the README for details.</p>
+</footer>
+<div id="tip"></div>
+<script>
+const D = {"kpis":{"transactions":51116,"sales":1663484316.41,"profit":540985110.57,"margin":0.3252,"customers":9932,"products":28,"avg_age":40.1,"years":[2019,2024]},"monthly":{"labels":["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],"sales":[101011859.12,129423546.46,108285454.84,143474684.19,156873025.1,134728477.26,147735440.96,114235803.87,114420560.35,168506497.26,164647115.96,180141851.04],"profit":[32749027.46,42088480.77,35308980.99,46906747.51,51151993.86,43509707.0,48135049.23,37205026.39,37042289.18,54776051.13,53355862.96,58755894.09],"units":[73368,96486,78403,104790,114758,99054,107403,83630,81411,121618,120243,132425]},"yearly":{"labels":["2019","2020","2021","2022","2023","2024"],"sales":[274115063.79,275777331.97,279451964.87,278464553.79,278120771.15,277554630.84],"profit":[89085086.41,89744741.09,91032480.03,90753015.55,90276331.04,90093456.45]},"category":{"labels":["Personal Care","Home Cleaning","Beverages","Bakery","Fresh Produce","Stationery","Snacks"],"sales":[402122774.49,305875532.36,236504763.77,216141253.37,206511254.27,160233988.96,136094749.19],"profit":[130686131.37,99642441.1,76745951.37,70250296.54,67064577.86,52439631.8,44156080.53]},"country":{"labels":["Canada","France","USA","Mexico","Germany"],"sales":[339426742.2,332524722.98,331373274.27,330608977.54,329550599.42]},"age":{"labels":["Young Adult","Adult","Old Adult","Elders","Senior"],"sales":[318117789.53,315536299.28,346130082.11,323157342.39,360542803.1]},"top5":{"labels":["Shea Body Lotion 400ml","Mint Toothpaste 100ml","Aloe Hand Wash 500ml","Men's Deodorant 150ml","Laundry Detergent 2kg"],"sales":[104584809.05,102233423.66,97864499.23,97440042.55,77683082.32]},"bottom5":{"labels":["Popcorn Butter 90g","Granola Bar 40g","Crunchy Chips 50g","Nut Mix 100g","A4 Notebook 200p"],"sales":[32381776.48,34155831.5,34289739.63,35267401.58,38889880.5]},"customers":{"labels":["Donald Anderson","Cindy Mckinney","Dale Bailey","Luis King","Frank Cox","Kaitlyn Rose","Samantha Villarreal","Stephanie Drake","Tiffany Mullen","Julie Hansen"],"avg_sales":[134832.0,104867.4,100042.5,96173.0,94332.07,93144.81,92596.92,91032.27,90736.5,89526.64],"avg_units":[30.0,33.0,30.0,28.0,31.0,29.0,26.0,21.0,25.0,28.0]}};
+const COLORS=['var(--c1)','var(--c2)','var(--c3)','var(--c4)','var(--c5)','var(--c6)','var(--c7)'];
+const NS='http://www.w3.org/2000/svg';
+const fmt=n=>n>=1e9?'$'+(n/1e9).toFixed(2)+'B':n>=1e6?'$'+(n/1e6).toFixed(1)+'M':n>=1e3?'$'+(n/1e3).toFixed(1)+'K':'$'+n.toFixed(0);
+const num=n=>n.toLocaleString('en-US');
+const pct=(v,t)=>(v/t*100).toFixed(1)+'%';
+const tip=document.getElementById('tip');
+function hover(el,text){el.addEventListener('mousemove',e=>{tip.textContent=text;tip.style.opacity=1;tip.style.left=e.clientX+12+'px';tip.style.top=e.clientY+12+'px'});el.addEventListener('mouseleave',()=>tip.style.opacity=0)}
+function S(tag,attrs,parent,text){const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(text!=null)e.textContent=text;if(parent)parent.appendChild(e);return e}
+function mount(id,w,h){const el=document.getElementById(id);el.innerHTML='';return {el,svg:S('svg',{viewBox:`0 0 ${w} ${h}`,role:'img'},el)}}
+
+// KPIs
+const k=D.kpis;
+[['Total sales',fmt(k.sales)],['Total profit',fmt(k.profit)],['Profit margin',(k.margin*100).toFixed(1)+'%'],['Transactions',num(k.transactions)],['Customers',num(k.customers)],['Products',k.products],['Avg customer age',k.avg_age]]
+.forEach(([a,b])=>{const d=document.createElement('div');d.className='kpi';d.innerHTML=`<span>${a}</span><b>${b}</b>`;document.getElementById('kpis').appendChild(d)});
+
+// Column / lollipop chart
+function columns(id,labels,vals,{lollipop=false,color=COLORS[0],w=520,h=300}={}){
+  const {svg}=mount(id,w,h),m={l:62,r:10,t:16,b:28},iw=w-m.l-m.r,ih=h-m.t-m.b,max=Math.max(...vals)*1.1;
+  for(let i=0;i<=4;i++){const y=m.t+ih-ih*i/4;S('line',{x1:m.l,x2:w-m.r,y1:y,y2:y,stroke:'var(--line)'},svg);S('text',{x:m.l-6,y:y+4,'text-anchor':'end'},svg,fmt(max*i/4))}
+  const bw=iw/vals.length;
+  vals.forEach((v,i)=>{const x=m.l+bw*i+bw/2,y=m.t+ih-ih*v/max;
+    const g=S('g',{},svg);
+    if(lollipop){S('line',{x1:x,x2:x,y1:m.t+ih,y2:y,stroke:color,'stroke-width':2},g);S('circle',{cx:x,cy:y,r:6,fill:color},g)}
+    else S('rect',{x:x-bw*.35,y,width:bw*.7,height:m.t+ih-y,rx:3,fill:color},g);
+    S('text',{x,y:h-8,'text-anchor':'middle'},svg,labels[i]);
+    const hit=S('rect',{x:x-bw/2,y:m.t,width:bw,height:ih,fill:'transparent'},svg);hover(hit,`${labels[i]}: ${fmt(v)}`)});
+}
+// Line chart with markers
+function line(id,labels,vals,{color=COLORS[1],w=520,h=300}={}){
+  const {svg}=mount(id,w,h),m={l:62,r:14,t:16,b:28},iw=w-m.l-m.r,ih=h-m.t-m.b,max=Math.max(...vals)*1.1;
+  for(let i=0;i<=4;i++){const y=m.t+ih-ih*i/4;S('line',{x1:m.l,x2:w-m.r,y1:y,y2:y,stroke:'var(--line)'},svg);S('text',{x:m.l-6,y:y+4,'text-anchor':'end'},svg,fmt(max*i/4))}
+  const pts=vals.map((v,i)=>[m.l+iw*(i+.5)/vals.length,m.t+ih-ih*v/max]);
+  S('polyline',{points:pts.map(p=>p.join(',')).join(' '),fill:'none',stroke:color,'stroke-width':2.5},svg);
+  pts.forEach((p,i)=>{const c=S('circle',{cx:p[0],cy:p[1],r:4.5,fill:'var(--card)',stroke:color,'stroke-width':2.5},svg);hover(c,`${labels[i]}: ${fmt(vals[i])}`);S('text',{x:p[0],y:h-8,'text-anchor':'middle'},svg,labels[i])});
+}
+// Horizontal bars
+function hbars(id,labels,vals,{color=COLORS[0],valFmt=fmt,w=520,rowH=40,left=120,sharePct=false}={}){
+  const h=labels.length*rowH+12,{svg}=mount(id,w,h),max=Math.max(...vals),tot=vals.reduce((a,b)=>a+b,0);
+  vals.forEach((v,i)=>{const y=6+i*rowH,bw=(w-left-90)*v/max;
+    S('text',{x:left-8,y:y+rowH/2+1,'text-anchor':'end'},svg,labels[i]);
+    const r=S('rect',{x:left,y:y+5,width:bw,height:rowH-12,rx:4,fill:Array.isArray(color)?color[i%color.length]:color},svg);
+    S('text',{x:left+bw+6,y:y+rowH/2+1,class:'val'},svg,sharePct?pct(v,tot):valFmt(v));
+    hover(r,`${labels[i]}: ${fmt(v)} (${pct(v,tot)})`)});
+}
+// Lollipop (horizontal)
+function hlolly(id,labels,vals,{color=COLORS[0],w=520,rowH=44,left=185}={}){
+  const h=labels.length*rowH+12,{svg}=mount(id,w,h),max=Math.max(...vals)*1.02;
+  vals.forEach((v,i)=>{const y=6+i*rowH+rowH/2,x=left+(w-left-80)*v/max;
+    S('text',{x:left-8,y:y+4,'text-anchor':'end'},svg,labels[i]);
+    S('line',{x1:left,x2:x,y1:y,y2:y,stroke:color,'stroke-width':2},svg);
+    const c=S('circle',{cx:x,cy:y,r:7,fill:color},svg);S('text',{x:x+12,y:y+4,class:'val'},svg,fmt(v));hover(c,`${labels[i]}: ${fmt(v)}`)});
+}
+// Donut
+function donut(id,labels,vals,{w:size=300}={}){
+  const {el,svg}=mount(id,size,size),cx=size/2,cy=size/2,R=size*.42,r=size*.26,tot=vals.reduce((a,b)=>a+b,0);
+  let a0=-Math.PI/2;
+  vals.forEach((v,i)=>{const a1=a0+v/tot*2*Math.PI,lg=a1-a0>Math.PI?1:0;
+    const p=[[cx+R*Math.cos(a0),cy+R*Math.sin(a0)],[cx+R*Math.cos(a1),cy+R*Math.sin(a1)],[cx+r*Math.cos(a1),cy+r*Math.sin(a1)],[cx+r*Math.cos(a0),cy+r*Math.sin(a0)]];
+    const path=S('path',{d:`M${p[0]}A${R},${R} 0 ${lg} 1 ${p[1]}L${p[2]}A${r},${r} 0 ${lg} 0 ${p[3]}Z`,fill:COLORS[i%COLORS.length],stroke:'var(--card)','stroke-width':2},svg);
+    hover(path,`${labels[i]}: ${fmt(v)} (${pct(v,tot)})`);a0=a1});
+  S('text',{x:cx,y:cy-2,'text-anchor':'middle',class:'val',style:'font-size:18px'},svg,fmt(tot));
+  S('text',{x:cx,y:cy+16,'text-anchor':'middle'},svg,'total sales');
+  svg.style.maxWidth='300px';svg.style.margin='0 auto';
+  const lg=document.createElement('div');lg.className='legend';
+  labels.forEach((l,i)=>{const s=document.createElement('span');s.innerHTML=`<i style="background:${COLORS[i%COLORS.length]}"></i>${l} <b>${pct(vals[i],tot)}</b>`;lg.appendChild(s)});
+  el.appendChild(lg);
+}
+
+// Revenue tab
+columns('c-month',D.monthly.labels,D.monthly.sales,{lollipop:true,w:1000,h:300});
+hbars('c-cat',D.category.labels,D.category.sales,{color:COLORS[0]});
+line('c-profit',D.monthly.labels,D.monthly.profit,{color:COLORS[1]});
+donut('c-country',D.country.labels,D.country.sales);
+donut('c-age',D.age.labels,D.age.sales);
+// Products tab
+hbars('p-share',D.category.labels,D.category.sales,{color:COLORS,sharePct:true});
+line('p-units',D.monthly.labels,D.monthly.units.map(Number),{color:COLORS[2]});
+document.querySelector('#p-units').dataset.units='1';
+hlolly('p-top',D.top5.labels,D.top5.sales,{color:COLORS[6]});
+hlolly('p-bot',D.bottom5.labels,D.bottom5.sales,{color:COLORS[3]});
+// Customers tab
+hbars('u-top',D.customers.labels,D.customers.avg_sales,{color:COLORS[4],left:150,w:1000,rowH:36});
+columns('u-age',D.age.labels,D.age.sales,{color:COLORS[1]});
+columns('u-year',D.yearly.labels,D.yearly.sales,{color:COLORS[0]});
+// units chart: relabel axis as units, not currency
+(function(){const svg=document.querySelector('#p-units svg');svg.querySelectorAll('text').forEach(t=>{const m=/^\$([\d.]+)([KMB]?)$/.exec(t.textContent);if(m)t.textContent=m[1]+m[2]});
+ svg.querySelectorAll('circle').forEach((c,i)=>{const clone=c.cloneNode();c.replaceWith(clone);hover(clone,`${D.monthly.labels[i]}: ${num(D.monthly.units[i])} units`)})})();
+
+// Tabs
+document.querySelectorAll('nav button').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('nav button').forEach(x=>x.setAttribute('aria-selected',x===b));
+  document.querySelectorAll('.panel').forEach(p=>p.hidden=p.id!==b.dataset.tab)}));
+</script>
+</body>
+</html>
